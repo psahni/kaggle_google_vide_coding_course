@@ -28,15 +28,25 @@ def classify_query(node_input: str) -> Event:
 
     Shipping-related topics: rates, tracking, delivery, returns
     """
-    shipping_keywords = ["rate", "track", "delivery", "return", "shipping", "cost", "price", "when", "arrive"]
+    shipping_keywords = [
+        "rate",
+        "track",
+        "delivery",
+        "return",
+        "shipping",
+        "cost",
+        "price",
+        "when",
+        "arrive",
+    ]
     query_lower = node_input.lower()
 
     is_shipping = any(keyword in query_lower for keyword in shipping_keywords)
 
     if is_shipping:
-        return Event(output=node_input, route="shipping")
+        return Event(output=node_input, route="shipping")  # type: ignore
     else:
-        return Event(output=node_input, route="unrelated")
+        return Event(output=node_input, route="unrelated")  # type: ignore
 
 
 def shipping_faq_agent(node_input: str) -> str:
@@ -47,9 +57,7 @@ Be professional, accurate, and helpful.
 If you don't have specific information, provide general guidance or offer to connect them with a specialist.
 Keep responses concise and friendly."""
 
-    messages = [
-        {"role": "user", "content": node_input}
-    ]
+    messages = [{"role": "user", "content": node_input}]
 
     response = call_groq_model(
         messages=messages,
@@ -74,10 +82,13 @@ root_agent = Workflow(
     name="customer_support_agent",
     edges=[
         ("START", classify_query),
-        (classify_query, {
-            "shipping": shipping_faq_agent,
-            "unrelated": decline_politely,
-        }),
+        (
+            classify_query,
+            {
+                "shipping": shipping_faq_agent,
+                "unrelated": decline_politely,
+            },
+        ),
     ],
     description="Customer support representative for shipping company that routes queries based on topic",
 )

@@ -1,7 +1,9 @@
 """Groq API integration for customer support agent."""
 
 import os
+
 from groq import Groq
+
 
 def get_groq_client() -> Groq:
     """Initialize Groq client with API key from environment."""
