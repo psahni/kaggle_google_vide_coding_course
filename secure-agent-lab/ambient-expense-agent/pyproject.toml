@@ -13,7 +13,7 @@ dependencies = [
     "opentelemetry-instrumentation-google-genai>=0.1.0,<1.0.0",
     "gcsfs>=2024.11.0",
     "google-cloud-logging>=3.12.0,<4.0.0",
-    "google-cloud-aiplatform[evaluation,agent-engines]>=1.156.0",
+    "google-cloud-aiplatform[agent-engines,evaluation]>=1.156.0",
     "protobuf>=6.31.1,<7.0.0",
     "python-dotenv>=1.0.0",
     "fastapi>=0.100.0",
@@ -98,6 +98,4 @@ pythonpath = "."
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.hatch.build.targets.wheel]
-packages = ["app","frontend"]
-
-
+packages = ["app", "expense_agent"]

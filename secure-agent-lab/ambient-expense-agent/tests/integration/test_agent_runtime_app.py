@@ -38,27 +38,24 @@ async def test_agent_stream_query(agent_app: AgentEngineApp) -> None:
     Integration test for the agent stream query functionality.
     Tests that the agent returns valid streaming responses.
     """
-    # Create message and events for the async_stream_query
-    message = "Hi!"
+    message = '{"amount": 50.0, "submitter": "bob@company.com", "category": "meals", "description": "Team lunch", "date": "2026-04-12"}'
     events = []
     async for event in agent_app.async_stream_query(message=message, user_id="test"):
         events.append(event)
     assert len(events) > 0, "Expected at least one chunk in response"
 
-    # Check for valid content in the response
-    has_text_content = False
+    # Verify that the session completed and resulted in an auto-approval
+    outcome = None
     for event in events:
-        validated_event = Event.model_validate(event)
-        content = validated_event.content
-        if (
-            content is not None
-            and content.parts
-            and any(part.text for part in content.parts)
-        ):
-            has_text_content = True
-            break
+        actions = event.get("actions", {})
+        if actions:
+            state_delta = actions.get("state_delta", {})
+            if state_delta and "outcome" in state_delta:
+                outcome = state_delta["outcome"]
+                break
 
-    assert has_text_content, "Expected at least one event with text content"
+    assert outcome is not None, "Expected an outcome state_delta"
+    assert outcome["status"] == "APPROVED"
 
 
 def test_agent_feedback(agent_app: AgentEngineApp) -> None:

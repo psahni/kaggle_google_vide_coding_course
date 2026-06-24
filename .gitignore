@@ -147,3 +147,12 @@ ehthumbs.db
 *.iml
 .venv/
 **/.venv/
+secure-agent-lab/ambient-expense-agent/artifacts/grade_results/
+# Agent logs and temp test outputs
+secure-agent-lab/ambient-expense-agent/all_recent_logs.txt
+secure-agent-lab/ambient-expense-agent/build_logs4.txt
+secure-agent-lab/ambient-expense-agent/error_logs.txt
+secure-agent-lab/ambient-expense-agent/stderr_logs.txt
+secure-agent-lab/ambient-expense-agent/check_wheels.py
+secure-agent-lab/ambient-expense-agent/test_production.py
+secure-agent-lab/ambient-expense-agent/tests/test_pii_cc_data.json
