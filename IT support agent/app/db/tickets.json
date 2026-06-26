@@ -80,5 +80,194 @@
         "details": "Policy check completed. Path: Auto-approve"
       }
     ]
+  },
+  {
+    "ticket_id": "LT-20260626-321",
+    "created_at": "2026-06-26T12:14:58.521152",
+    "requester": {
+      "name": "Alice Johnson",
+      "manager": "EMP-005",
+      "designation": "Junior Engineer",
+      "department": "Engineering",
+      "employee_id": "EMP-001"
+    },
+    "request": {
+      "type": "New",
+      "device_category": "Premium",
+      "location": "New York",
+      "justification": "I need it for new project and client work",
+      "accessories": "None",
+      "required_date": "Within 1 week"
+    },
+    "status": "approved",
+    "approved_by": null,
+    "audit_trail": [
+      {
+        "timestamp": "2026-06-26T12:14:58.521152",
+        "actor": "employee",
+        "action": "request_submitted",
+        "details": "User submitted the laptop request."
+      },
+      {
+        "timestamp": "2026-06-26T12:14:58.521152",
+        "actor": "agent",
+        "action": "policy_check_passed",
+        "details": "Policy check completed. Path: Auto-approve"
+      }
+    ]
+  },
+  {
+    "ticket_id": "LT-20260626-780",
+    "created_at": "2026-06-26T12:32:00.294523",
+    "requester": {
+      "department": "Engineering",
+      "name": "Alice Johnson",
+      "designation": "Junior Engineer",
+      "employee_id": "EMP-001",
+      "manager": "EMP-005"
+    },
+    "request": {
+      "accessories": [
+        "mouse"
+      ],
+      "required_date": "within 3 days",
+      "type": "New",
+      "location": "New York",
+      "device_category": "Standard",
+      "justification": "I am a new hire, i need it to proceed with my work"
+    },
+    "status": "approved",
+    "approved_by": null,
+    "audit_trail": [
+      {
+        "timestamp": "2026-06-26T12:32:00.294523",
+        "actor": "employee",
+        "action": "request_submitted",
+        "details": "User submitted the laptop request."
+      },
+      {
+        "timestamp": "2026-06-26T12:32:00.294523",
+        "actor": "agent",
+        "action": "policy_check_passed",
+        "details": "Policy check completed. Path: Auto-approve"
+      }
+    ]
+  },
+  {
+    "ticket_id": "LT-20260626-335",
+    "created_at": "2026-06-26T12:46:54.296899",
+    "requester": {
+      "employee_id": "EMP-002",
+      "designation": "Senior Engineer",
+      "department": "Engineering",
+      "name": "Bob Smith",
+      "manager": "EMP-005"
+    },
+    "request": {
+      "location": "San Francisco",
+      "type": "Replacement",
+      "justification": "Client work",
+      "required_date": "Within a week",
+      "accessories": [],
+      "device_category": "Standard"
+    },
+    "status": "completed",
+    "approved_by": "manager",
+    "audit_trail": [
+      {
+        "timestamp": "2026-06-26T12:46:54.296899",
+        "actor": "employee",
+        "action": "request_submitted",
+        "details": "User submitted the laptop request."
+      },
+      {
+        "timestamp": "2026-06-26T12:46:54.296899",
+        "actor": "agent",
+        "action": "policy_check_passed",
+        "details": "Policy check completed. Path: Manager required"
+      },
+      {
+        "timestamp": "2026-06-26T12:47:25.377077",
+        "actor": "manager",
+        "action": "manager_approved",
+        "details": "Request approved. Reason: Manager approved via chat"
+      },
+      {
+        "timestamp": "2026-06-26T12:47:25.377077",
+        "actor": "system",
+        "action": "ticket_fulfilled",
+        "details": "Ticket is ready for fulfillment."
+      }
+    ]
+  },
+  {
+    "ticket_id": "LT-20260626-451",
+    "created_at": "2026-06-26T13:22:54.578048",
+    "requester": {
+      "manager": "EMP-010",
+      "department": "Engineering",
+      "name": "Eve Adams",
+      "designation": "Engineering Manager",
+      "employee_id": "EMP-005"
+    },
+    "request": {
+      "type": "New Hire",
+      "accessories": "None",
+      "justification": "New hire John Doe starting next Monday",
+      "required_date": "Next Monday",
+      "location": "San Francisco",
+      "device_category": "standard"
+    },
+    "status": "approved",
+    "approved_by": null,
+    "audit_trail": [
+      {
+        "timestamp": "2026-06-26T13:22:54.578048",
+        "actor": "employee",
+        "action": "request_submitted",
+        "details": "User submitted the laptop request."
+      },
+      {
+        "timestamp": "2026-06-26T13:22:54.578048",
+        "actor": "agent",
+        "action": "policy_check_passed",
+        "details": "Policy check completed. Path: Auto-approve"
+      }
+    ]
+  },
+  {
+    "ticket_id": "LT-20260626-807",
+    "created_at": "2026-06-26T13:23:02.645083",
+    "requester": {
+      "department": "Engineering",
+      "designation": "Junior Engineer",
+      "employee_id": "EMP-001",
+      "manager": "EMP-005",
+      "name": "Alice Johnson"
+    },
+    "request": {
+      "required_date": "ASAP",
+      "location": "New York",
+      "justification": "Need more power.",
+      "device_category": "premium",
+      "type": "New",
+      "accessories": []
+    },
+    "status": "pending_manager_approval",
+    "approved_by": null,
+    "audit_trail": [
+      {
+        "timestamp": "2026-06-26T13:23:02.645083",
+        "actor": "employee",
+        "action": "request_submitted",
+        "details": "User submitted the laptop request."
+      },
+      {
+        "timestamp": "2026-06-26T13:23:02.645083",
+        "actor": "agent",
+        "action": "policy_check_passed",
+        "details": "Policy check completed. Path: Manager required"
+      }
+    ]
   }
 ]

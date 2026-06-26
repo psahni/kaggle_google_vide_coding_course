@@ -69,17 +69,28 @@ def check_policy(designation: str, experience: int, request_type: str, device: s
     elif experience >= 7:
         tier = "Premium" # 7+ years -> eligible for senior tier device
 
-    # Find the appropriate request rule
-    # Note: Device in request rules (e.g. Standard device, Premium device)
-    device_condition = f"{tier} device" if request_type == "New" else ""
-    if request_type == "Upgrade":
-        # Simplified upgrade condition check
-        device_condition = f"Standard -> {tier}" if base_entitlement['tier'] == "Standard" else f"Premium -> {tier}"
+    # Determine the condition to match based on the requested device/reason
+    device_condition = ""
+    if request_type.lower() == "new":
+        device_condition = "Premium device" if "premium" in device.lower() else "Standard device"
+    elif request_type.lower() == "upgrade":
+        requested_tier = "Premium" if "premium" in device.lower() else "Standard"
+        device_condition = f"{tier} -> {requested_tier}"
+    elif request_type.lower() == "replacement":
+        # For replacements, the "device" parameter should hold the reason
+        if "stolen" in device.lower():
+            device_condition = "Stolen"
+        elif "lost" in device.lower():
+            device_condition = "Lost"
+        else:
+            device_condition = "Damaged / Aging"
+    elif request_type.lower() == "new hire":
+        device_condition = "Premium" if "premium" in device.lower() else "Standard"
 
     approval_path = "Manager required" # default fallback
     for rule in request_rules:
         if rule["request_type"].lower() == request_type.lower():
-            if rule.get("condition", "").lower() in device.lower() or rule.get("condition", "").lower() in device_condition.lower() or not rule.get("condition"):
+            if rule.get("condition", "").lower() == device_condition.lower():
                 approval_path = rule["approval_path"]
                 break
 

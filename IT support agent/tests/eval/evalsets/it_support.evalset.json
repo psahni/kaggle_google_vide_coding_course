@@ -1,0 +1,52 @@
+{
+  "eval_set_id": "it_support_eval",
+  "name": "IT Support Agent Evaluation",
+  "description": "Tests the 3 core flows: Standard auto-approve, Manager required exception, and New Hire.",
+  "eval_cases": [
+    {
+      "eval_id": "emp_002_auto_approve",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [{"text": "My employee ID is EMP-002. I need a replacement laptop because mine is damaged. I prefer a standard device and no accessories are needed."}]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user_2",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "emp_001_manager_required",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [{"text": "My employee ID is EMP-001. I want a new premium laptop. Justification: Need more power. Required date: ASAP. No accessories."}]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user_1",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "emp_005_new_hire",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [{"text": "My employee ID is EMP-005. I need a new standard laptop for a new hire starting next Monday. Name: John Doe. No accessories needed."}]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user_5",
+        "state": {}
+      }
+    }
+  ]
+}
