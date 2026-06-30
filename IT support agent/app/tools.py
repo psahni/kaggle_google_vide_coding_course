@@ -394,6 +394,7 @@ def create_ticket(
         "status": status,
         "approved_by": None,
         "manager_override": manager_override,
+        "policy_reason": policy_reason,
         "audit_trail": [
             {
                 "timestamp": now_str,

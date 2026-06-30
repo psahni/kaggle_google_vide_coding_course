@@ -224,6 +224,11 @@ export default function DashboardPage() {
                 <p><strong>Date Required:</strong> {selectedTicket.request.required_date}</p>
                 <p><strong>Accessories:</strong> {selectedTicket.request.accessories || 'None'}</p>
                 <p><strong>Status:</strong> <span className={`status-badge status-${selectedTicket.status}`}>{selectedTicket.status.replace(/_/g, ' ')}</span></p>
+                {selectedTicket.policy_reason && (
+                  <p style={{ fontSize: '13px', color: '#555', backgroundColor: '#f9f9f9', borderLeft: '3px solid #28a745', padding: '8px', borderRadius: '4px', marginTop: '10px' }}>
+                    <strong>Policy Info:</strong> {selectedTicket.policy_reason}
+                  </p>
+                )}
                 {selectedTicket.manager_override && (
                   <p style={{ color: '#856404', backgroundColor: '#fff3cd', padding: '8px', borderRadius: '4px', fontSize: '13px' }}>
                     ⚠️ <strong>Manager Override Applied</strong>
