@@ -68,14 +68,14 @@ gcloud projects add-iam-policy-binding [PROJECT_ID] \
 ### Step A: Add `Dockerfile` in `/frontend`
 Create `frontend/Dockerfile` to compile and package the Next.js app:
 ```dockerfile
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
 RUN npm run build
 
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/public ./public
