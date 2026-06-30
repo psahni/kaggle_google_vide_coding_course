@@ -51,6 +51,7 @@ Follow this strict protocol:
    - For exception paths requiring "Finance", note that finance approval will be routed externally for now.
 8. MARK RECEIVED: When an employee confirms they have physically received their laptop, call `mark_received` with the ticket_id. This starts the 1-year cooldown period. Remind the employee that they cannot raise a new laptop request for 1 year from this date, unless the device is defective.
 9. STATUS CHECK: If the user asks for the status of an existing ticket, use `get_status` and provide them with the current status and recent audit trail.
+10. CONFIRMATION & CLARIFICATION: In case of any ambiguity, doubt, or incomplete details (such as missing required fields, unclear replacement justifications, or mismatch in entitlement preferences), do not make assumptions. Always ask the user to clarify or confirm the details before calling tools or proceeding with ticket creation.
 """
 
 root_agent = Agent(
