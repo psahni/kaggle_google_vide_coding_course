@@ -102,28 +102,24 @@ def check_existing_requests(
         )
 
     if recent_fulfilled_ticket:
-        # Special case: defective or damaged laptop — only bypass cooldown if employee explicitly says it's defective or damaged
-        is_defective_or_damaged = any(
-            word in replacement_reason.lower()
-            for word in [
-                "defective",
-                "not working",
-                "doesn't work",
-                "dead",
-                "faulty",
-                "damaged",
-                "broken",
-                "cracked",
-                "destroyed",
-            ]
+        # Bypass cooldown if user requests a replacement with a valid justification (defect, damage, performance, configuration)
+        bypass_keywords = [
+            "defective", "not working", "doesn't work", "dead", "faulty", "error", "fail",
+            "damaged", "broken", "cracked", "destroyed", "screen", "keyboard", "water", "spill",
+            "slow", "sluggish", "freeze", "lag", "hang",
+            "ram", "memory", "storage", "config", "specs", "specification", "cpu", "processor",
+            "missing", "wrong", "mismatch", "incorrect"
+        ]
+        is_valid_replacement = any(
+            word in replacement_reason.lower() for word in bypass_keywords
         )
-        if new_request_type.lower() == "replacement" and is_defective_or_damaged:
+        if new_request_type.lower() == "replacement" and is_valid_replacement:
             return json.dumps(
                 {
                     "status": "warn_defective",
-                    "reason": "A laptop was issued to you within the last year, but a defective or damaged device replacement is allowed.",
+                    "reason": "A laptop was issued to you within the last year, but a replacement is permitted for defect, performance, or config issues under manager review.",
                     "existing_ticket_id": recent_fulfilled_ticket["ticket_id"],
-                    "message": "You received a laptop recently. Since you have reported it as defective or damaged, a replacement is permitted but requires mandatory manager approval.",
+                    "message": "You received a laptop recently. Since you reported performance, specs, defect, or damage issues, a replacement is permitted but requires mandatory manager approval.",
                 }
             )
         return json.dumps(
