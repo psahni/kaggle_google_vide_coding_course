@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from google.cloud import firestore
 
 # Initialize Firestore client
-db = firestore.Client()
+db = firestore.Client(project="ambient-agent-500404")
 
 
 def _generate_ticket_id() -> str:
