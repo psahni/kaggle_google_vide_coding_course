@@ -102,18 +102,28 @@ def check_existing_requests(
         )
 
     if recent_fulfilled_ticket:
-        # Special case: defective laptop — only bypass cooldown if employee explicitly says it's defective
-        is_defective = any(
+        # Special case: defective or damaged laptop — only bypass cooldown if employee explicitly says it's defective or damaged
+        is_defective_or_damaged = any(
             word in replacement_reason.lower()
-            for word in ["defective", "not working", "doesn't work", "dead", "faulty"]
+            for word in [
+                "defective",
+                "not working",
+                "doesn't work",
+                "dead",
+                "faulty",
+                "damaged",
+                "broken",
+                "cracked",
+                "destroyed",
+            ]
         )
-        if new_request_type.lower() == "replacement" and is_defective:
+        if new_request_type.lower() == "replacement" and is_defective_or_damaged:
             return json.dumps(
                 {
                     "status": "warn_defective",
-                    "reason": "A laptop was issued to you within the last year, but a defective device replacement is allowed.",
+                    "reason": "A laptop was issued to you within the last year, but a defective or damaged device replacement is allowed.",
                     "existing_ticket_id": recent_fulfilled_ticket["ticket_id"],
-                    "message": "You received a laptop recently. Since you have reported it as defective, a replacement is permitted but requires mandatory manager approval.",
+                    "message": "You received a laptop recently. Since you have reported it as defective or damaged, a replacement is permitted but requires mandatory manager approval.",
                 }
             )
         return json.dumps(
