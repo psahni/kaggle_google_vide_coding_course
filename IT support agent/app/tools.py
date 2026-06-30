@@ -324,6 +324,16 @@ def check_policy(
             )
     
     approval_path = final_path
+    if approval_path.lower() == "auto-approve":
+        if matched_rule_path.lower() == "auto-approve":
+            reason_parts.append(
+                f"Auto-approved: request type '{request_type}' under condition '{device_condition}' matches the standard policy for automatic approval."
+            )
+        else:
+            reason_parts.append(
+                f"Auto-approved: employee's years of experience ({experience} years >= 10) overrides the standard approval requirement."
+            )
+            
     reason = " ".join(reason_parts)
 
     return json.dumps(
