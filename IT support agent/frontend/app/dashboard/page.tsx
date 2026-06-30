@@ -212,6 +212,9 @@ export default function DashboardPage() {
                 <p><strong>Department:</strong> {selectedTicket.requester.department}</p>
                 <p><strong>Designation:</strong> {selectedTicket.requester.designation}</p>
                 <p><strong>Manager ID:</strong> <code>{selectedTicket.requester.manager}</code></p>
+                {selectedTicket.requester.experience !== undefined && (
+                  <p><strong>Experience:</strong> {selectedTicket.requester.experience} years</p>
+                )}
               </div>
               <div>
                 <h3>Request Details</h3>
