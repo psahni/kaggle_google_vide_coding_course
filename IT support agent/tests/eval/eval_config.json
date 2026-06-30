@@ -14,6 +14,10 @@
         {
           "rubricId": "helpfulness",
           "rubricContent": { "textProperty": "The response is helpful and provides useful information." }
+        },
+        {
+          "rubricId": "policy_enforcement",
+          "rubricContent": { "textProperty": "When a request violates policy (e.g., duplicate request, within 1-year cooldown), the agent clearly blocks the request, explains the reason, and mentions that a manager can override if needed." }
         }
       ]
     }

@@ -2,17 +2,22 @@ import json
 import random
 import string
 from datetime import datetime, timedelta, timezone
+
 from google.cloud import firestore
 
 # Initialize Firestore client
 db = firestore.Client()
 
+
 def _generate_ticket_id() -> str:
     date_str = datetime.now().strftime("%Y%m%d")
-    suffix = ''.join(random.choices(string.digits, k=3))
+    suffix = "".join(random.choices(string.digits, k=3))
     return f"LT-{date_str}-{suffix}"
 
-def check_existing_requests(employee_id: str, new_request_type: str = "", replacement_reason: str = "") -> str:
+
+def check_existing_requests(
+    employee_id: str, new_request_type: str = "", replacement_reason: str = ""
+) -> str:
     """Checks if an employee has any active, pending, or recent completed tickets.
 
     Must be called immediately after lookup_employee and before creating any new ticket.
@@ -30,7 +35,9 @@ def check_existing_requests(employee_id: str, new_request_type: str = "", replac
     """
     tickets_ref = db.collection("tickets")
     # Query all tickets for this employee
-    query = tickets_ref.where(filter=firestore.FieldFilter("requester.employee_id", "==", employee_id))
+    query = tickets_ref.where(
+        filter=firestore.FieldFilter("requester.employee_id", "==", employee_id)
+    )
     docs = query.stream()
 
     active_ticket = None
@@ -54,7 +61,9 @@ def check_existing_requests(employee_id: str, new_request_type: str = "", replac
         # Parse received_at timestamp (when laptop was physically handed over)
         received_at_str = ticket.get("received_at")
         try:
-            received_at = datetime.fromisoformat(received_at_str) if received_at_str else None
+            received_at = (
+                datetime.fromisoformat(received_at_str) if received_at_str else None
+            )
             if received_at and received_at.tzinfo is None:
                 received_at = received_at.replace(tzinfo=timezone.utc)
         except (ValueError, TypeError):
@@ -71,51 +80,80 @@ def check_existing_requests(employee_id: str, new_request_type: str = "", replac
                 recent_fulfilled_ticket = ticket
         elif status == "rejected":
             # Keep track of the most recent rejection
-            if last_rejected_ticket is None or (created_at and created_at > datetime.fromisoformat(
-                    last_rejected_ticket.get("created_at", "2000-01-01")).replace(tzinfo=timezone.utc)):
+            if last_rejected_ticket is None or (
+                created_at
+                and created_at
+                > datetime.fromisoformat(
+                    last_rejected_ticket.get("created_at", "2000-01-01")
+                ).replace(tzinfo=timezone.utc)
+            ):
                 last_rejected_ticket = ticket
 
     # Priority: active > fulfilled cooldown > rejected
     if active_ticket:
-        return json.dumps({
-            "status": "blocked",
-            "reason": "You already have an active or pending laptop request.",
-            "existing_ticket_id": active_ticket["ticket_id"],
-            "existing_ticket_status": active_ticket["status"],
-            "message": f"Cannot create a new ticket. Existing ticket {active_ticket['ticket_id']} is currently '{active_ticket['status']}'. Please wait for it to be resolved or ask your manager to override."
-        })
+        return json.dumps(
+            {
+                "status": "blocked",
+                "reason": "You already have an active or pending laptop request.",
+                "existing_ticket_id": active_ticket["ticket_id"],
+                "existing_ticket_status": active_ticket["status"],
+                "message": f"Cannot create a new ticket. Existing ticket {active_ticket['ticket_id']} is currently '{active_ticket['status']}'. Please wait for it to be resolved or ask your manager to override.",
+            }
+        )
 
     if recent_fulfilled_ticket:
-        # Special case: defective laptop — only bypass cooldown if employee explicitly says it's defective
-        is_defective = any(word in replacement_reason.lower() for word in ["defective", "not working", "doesn't work", "dead", "faulty"])
-        if new_request_type.lower() == "replacement" and is_defective:
-            return json.dumps({
-                "status": "warn_defective",
-                "reason": "A laptop was issued to you within the last year, but a defective device replacement is allowed.",
+        # Bypass cooldown if user requests a replacement with a valid justification (defect, damage, performance, configuration)
+        bypass_keywords = [
+            "defective", "not working", "doesn't work", "dead", "faulty", "error", "fail",
+            "damaged", "broken", "cracked", "destroyed", "screen", "keyboard", "water", "spill",
+            "slow", "sluggish", "freeze", "lag", "hang",
+            "ram", "memory", "storage", "config", "specs", "specification", "cpu", "processor",
+            "missing", "wrong", "mismatch", "incorrect"
+        ]
+        is_valid_replacement = any(
+            word in replacement_reason.lower() for word in bypass_keywords
+        )
+        if new_request_type.lower() == "replacement" and is_valid_replacement:
+            return json.dumps(
+                {
+                    "status": "warn_defective",
+                    "reason": "A laptop was issued to you within the last year, but a replacement is permitted for defect, performance, or config issues under manager review.",
+                    "existing_ticket_id": recent_fulfilled_ticket["ticket_id"],
+                    "message": "You received a laptop recently. Since you reported performance, specs, defect, or damage issues, a replacement is permitted but requires mandatory manager approval.",
+                }
+            )
+        return json.dumps(
+            {
+                "status": "blocked",
+                "reason": "You already received a laptop within the last 365 days.",
                 "existing_ticket_id": recent_fulfilled_ticket["ticket_id"],
-                "message": "You received a laptop recently. Since you have reported it as defective, a replacement is permitted but requires mandatory manager approval."
-            })
-        return json.dumps({
-            "status": "blocked",
-            "reason": "You already received a laptop within the last 365 days.",
-            "existing_ticket_id": recent_fulfilled_ticket["ticket_id"],
-            "message": f"Cannot create a new ticket. A laptop was issued under ticket {recent_fulfilled_ticket['ticket_id']} less than a year ago. Your manager can override this policy if there is a valid reason."
-        })
+                "message": f"Cannot create a new ticket. A laptop was issued under ticket {recent_fulfilled_ticket['ticket_id']} less than a year ago. Your manager can override this policy if there is a valid reason.",
+            }
+        )
 
     if last_rejected_ticket:
         # Find rejection reason from audit trail
         audit = last_rejected_ticket.get("audit_trail", [])
-        rejection_entry = next((e for e in reversed(audit) if e.get("action") == "manager_rejected"), None)
-        rejection_reason = rejection_entry["details"] if rejection_entry else "No reason provided."
-        return json.dumps({
-            "status": "warn",
-            "reason": "Your last request was rejected.",
-            "existing_ticket_id": last_rejected_ticket["ticket_id"],
-            "rejection_reason": rejection_reason,
-            "message": f"Your previous request ({last_rejected_ticket['ticket_id']}) was rejected. Reason: {rejection_reason}. You may submit a new request with a stronger justification."
-        })
+        rejection_entry = next(
+            (e for e in reversed(audit) if e.get("action") == "manager_rejected"), None
+        )
+        rejection_reason = (
+            rejection_entry["details"] if rejection_entry else "No reason provided."
+        )
+        return json.dumps(
+            {
+                "status": "warn",
+                "reason": "Your last request was rejected.",
+                "existing_ticket_id": last_rejected_ticket["ticket_id"],
+                "rejection_reason": rejection_reason,
+                "message": f"Your previous request ({last_rejected_ticket['ticket_id']}) was rejected. Reason: {rejection_reason}. You may submit a new request with a stronger justification.",
+            }
+        )
 
-    return json.dumps({"status": "clear", "message": "No conflicting tickets found. You may proceed."})
+    return json.dumps(
+        {"status": "clear", "message": "No conflicting tickets found. You may proceed."}
+    )
+
 
 def lookup_employee(employee_id: str) -> str:
     """Looks up an employee record by their ID."""
@@ -124,64 +162,203 @@ def lookup_employee(employee_id: str) -> str:
         return json.dumps(doc.to_dict())
     return f"Employee with ID {employee_id} not found."
 
-def check_policy(designation: str, experience: int, request_type: str, device: str) -> str:
-    """Checks the laptop request policy to determine entitlements and approval path."""
+
+def _get_policy_config() -> tuple[dict, list]:
+    """Fetches designation entitlements and request type rules from Firestore config."""
     policies_doc = db.collection("policies").document("config").get()
     if not policies_doc.exists:
-        return json.dumps({"error": "Policy configuration not found in database."})
-    
+        raise ValueError("Policy configuration not found in database.")
+
     policies = policies_doc.to_dict()
     entitlements = policies.get("designation_entitlements", {})
     request_rules = policies.get("request_type_rules", [])
+    return entitlements, request_rules
 
+
+def _get_designation_entitlement(
+    entitlements: dict, designation: str
+) -> tuple[str, str]:
+    """Looks up base tier and entitled device for the employee's designation."""
     base_entitlement = entitlements.get(designation)
     if not base_entitlement:
-        return json.dumps({"error": f"No entitlement found for designation: {designation}"})
+        raise ValueError(f"No entitlement found for designation: {designation}")
+    return base_entitlement["tier"], base_entitlement["entitled_device"]
 
-    tier = base_entitlement["tier"]
-    entitled_device = base_entitlement["entitled_device"]
 
-    # Experience overrides
-    if experience >= 10:
-        tier = "Premium"
-    elif experience >= 7:
-        tier = "Premium"
+def _apply_experience_tier_override(experience: int, current_tier: str) -> str:
+    """Applies experience-based tier overrides (7+ years gets Premium tier)."""
+    if experience >= 7:
+        return "Premium"
+    return current_tier
 
-    # Determine the condition to match based on the requested device/reason
-    device_condition = ""
-    if request_type.lower() == "new":
-        device_condition = "Premium device" if "premium" in device.lower() else "Standard device"
-    elif request_type.lower() == "upgrade":
-        requested_tier = "Premium" if "premium" in device.lower() else "Standard"
-        device_condition = f"{tier} -> {requested_tier}"
-    elif request_type.lower() == "replacement":
-        if "stolen" in device.lower():
-            device_condition = "Stolen"
-        elif "lost" in device.lower():
-            device_condition = "Lost"
-        else:
-            device_condition = "Damaged / Aging"
-    elif request_type.lower() == "new hire":
-        device_condition = "Premium" if "premium" in device.lower() else "Standard"
 
-    approval_path = "Manager required"
+def _determine_device_condition(request_type: str, device: str, tier: str) -> str:
+    """Determines the device condition to match based on request type, device preference, and tier."""
+    request_type_lower = request_type.lower()
+    device_lower = device.lower()
+
+    if request_type_lower == "new":
+        return "Premium device" if "premium" in device_lower else "Standard device"
+
+    if request_type_lower == "upgrade":
+        requested_tier = "Premium" if "premium" in device_lower else "Standard"
+        return f"{tier} -> {requested_tier}"
+
+    if request_type_lower == "replacement":
+        if "stolen" in device_lower:
+            return "Stolen"
+        if "lost" in device_lower:
+            return "Lost"
+        return "Damaged / Aging"
+
+    if request_type_lower == "new hire":
+        return "Premium" if "premium" in device_lower else "Standard"
+
+    return ""
+
+
+def _get_rule_approval_path(
+    request_rules: list, request_type: str, device_condition: str
+) -> str:
+    """Retrieves the approval path from matching request rules, defaulting to 'Manager required'."""
     for rule in request_rules:
         if rule["request_type"].lower() == request_type.lower():
             if rule.get("condition", "").lower() == device_condition.lower():
-                approval_path = rule["approval_path"]
-                break
+                return rule["approval_path"]
+    return "Manager required"
 
-    # Overrides apply
+
+def _apply_experience_approval_override(experience: int, current_path: str) -> str:
+    """Applies experience-based approval overrides (10+ years gets Auto-approve)."""
     if experience >= 10:
-        approval_path = "Auto-approve"
+        return "Auto-approve"
+    return current_path
 
-    return json.dumps({
-        "entitled_device": entitled_device,
-        "tier": tier,
-        "approval_path": approval_path
-    })
 
-def create_ticket(requester: dict, request: dict, approval_path: str, manager_override: bool = False) -> str:
+def _has_received_laptop_in_cooldown(employee_id: str) -> bool:
+    """Checks if the employee has a fulfilled laptop ticket within the last 365 days."""
+    tickets_ref = db.collection("tickets")
+    query = tickets_ref.where(
+        filter=firestore.FieldFilter("requester.employee_id", "==", employee_id)
+    )
+    docs = query.stream()
+    now = datetime.now(timezone.utc)
+    for doc in docs:
+        t = doc.to_dict()
+        if t.get("status") == "fulfilled":
+            received_at_str = t.get("received_at")
+            if received_at_str:
+                try:
+                    received_at = datetime.fromisoformat(received_at_str)
+                    if received_at.tzinfo is None:
+                        received_at = received_at.replace(tzinfo=timezone.utc)
+                    time_since_received = now - received_at
+                    if time_since_received < timedelta(days=365):
+                        return True
+                except (ValueError, TypeError):
+                    pass
+    return False
+
+
+def _enforce_cooldown_override(has_recent_laptop: bool, approval_path: str) -> str:
+    """Enforces cooldown logic, downgrading 'Auto-approve' to 'Manager required' if needed."""
+    if has_recent_laptop and approval_path.lower() == "auto-approve":
+        return "Manager required"
+    return approval_path
+
+
+def check_policy(
+    employee_id: str, designation: str, experience: int, request_type: str, device: str
+) -> str:
+    """Checks the laptop request policy to determine entitlements and approval path.
+
+    Args:
+        employee_id: The ID of the employee making the request.
+        designation: Employee's job title/designation.
+        experience: Employee's years of experience.
+        request_type: The type of request (e.g., New, Upgrade, Replacement, New Hire).
+        device: The device category requested (e.g., standard, premium).
+
+    Returns:
+        A JSON string containing the entitled_device, tier, and required approval_path.
+    """
+    try:
+        entitlements, request_rules = _get_policy_config()
+        tier, entitled_device = _get_designation_entitlement(entitlements, designation)
+    except ValueError as e:
+        return json.dumps({"error": str(e)})
+
+    original_tier = tier
+    tier = _apply_experience_tier_override(experience, tier)
+    device_condition = _determine_device_condition(request_type, device, tier)
+    approval_path = _get_rule_approval_path(
+        request_rules, request_type, device_condition
+    )
+    
+    # Track the reasons for the path
+    reason_parts = []
+    reason_parts.append(
+        f"Employee designation '{designation}' is entitled to {entitled_device} ({original_tier} tier)."
+    )
+    
+    if tier != original_tier:
+        reason_parts.append(
+            f"Device tier upgraded to {tier} based on experience override ({experience} years >= 7)."
+        )
+
+    matched_rule_path = approval_path
+    reason_parts.append(
+        f"Request type '{request_type}' with device condition '{device_condition}' requires '{matched_rule_path}' approval."
+    )
+
+    approval_path = _apply_experience_approval_override(experience, approval_path)
+    if approval_path == "Auto-approve" and matched_rule_path != "Auto-approve":
+        reason_parts.append(
+            f"Approval path upgraded to 'Auto-approve' due to experience override (>= 10 years)."
+        )
+
+    has_recent_laptop = _has_received_laptop_in_cooldown(employee_id)
+    final_path = _enforce_cooldown_override(has_recent_laptop, approval_path)
+    
+    if has_recent_laptop:
+        reason_parts.append(
+            "1-year cooldown is active (laptop received recently)."
+        )
+        if final_path != approval_path:
+            reason_parts.append(
+                f"Auto-approval revoked; forced to '{final_path}'."
+            )
+    
+    approval_path = final_path
+    if approval_path.lower() == "auto-approve":
+        if matched_rule_path.lower() == "auto-approve":
+            reason_parts.append(
+                f"Auto-approved: request type '{request_type}' under condition '{device_condition}' matches the standard policy for automatic approval."
+            )
+        else:
+            reason_parts.append(
+                f"Auto-approved: employee's years of experience ({experience} years >= 10) overrides the standard approval requirement."
+            )
+            
+    reason = " ".join(reason_parts)
+
+    return json.dumps(
+        {
+            "entitled_device": entitled_device,
+            "tier": tier,
+            "approval_path": approval_path,
+            "reason": reason,
+        }
+    )
+
+
+def create_ticket(
+    requester: dict,
+    request: dict,
+    approval_path: str,
+    manager_override: bool = False,
+    policy_reason: str = "",
+) -> str:
     """Creates a new laptop request ticket.
 
     Args:
@@ -189,14 +366,18 @@ def create_ticket(requester: dict, request: dict, approval_path: str, manager_ov
         request: Dictionary containing request details (type, device_category, justification, required_date, location, accessories).
         approval_path: The required approval path determined by check_policy.
         manager_override: Set to True if a manager explicitly overrode a policy block to allow this ticket.
+        policy_reason: Explanation of which policies were evaluated and passed.
 
     Returns:
         A JSON string containing the generated ticket ID and initial status.
     """
     ticket_id = _generate_ticket_id()
-    
+
+    # Check if employee has a completed/fulfilled ticket within the last 365 days for double-safety
+    has_recent_laptop = _has_received_laptop_in_cooldown(requester.get("employee_id"))
+
     status = "pending_manager_approval"
-    if approval_path.lower() == "auto-approve":
+    if approval_path.lower() == "auto-approve" and not has_recent_laptop:
         # Auto-approved: laptop is being arranged. Cooldown starts only when mark_received is called.
         status = "approved"
     elif "finance" in approval_path.lower():
@@ -205,6 +386,10 @@ def create_ticket(requester: dict, request: dict, approval_path: str, manager_ov
         status = "pending_manager_approval"
 
     now_str = datetime.now().isoformat()
+
+    details_str = f"Policy check completed. Path: {approval_path}."
+    if policy_reason:
+        details_str += f" Reason: {policy_reason}"
 
     new_ticket = {
         "ticket_id": ticket_id,
@@ -215,52 +400,60 @@ def create_ticket(requester: dict, request: dict, approval_path: str, manager_ov
         "status": status,
         "approved_by": None,
         "manager_override": manager_override,
+        "policy_reason": policy_reason,
         "audit_trail": [
             {
                 "timestamp": now_str,
                 "actor": "employee",
                 "action": "request_submitted",
-                "details": "User submitted the laptop request."
+                "details": "User submitted the laptop request.",
             },
             {
                 "timestamp": now_str,
                 "actor": "agent",
                 "action": "policy_check_passed",
-                "details": f"Policy check completed. Path: {approval_path}"
-            }
-        ]
+                "details": details_str,
+            },
+        ],
     }
 
     # Log manager override in audit trail if applicable
     if manager_override:
-        new_ticket["audit_trail"].append({
-            "timestamp": now_str,
-            "actor": "manager",
-            "action": "manager_override_applied",
-            "details": "Manager explicitly overrode a policy block to allow this request."
-        })
+        new_ticket["audit_trail"].append(
+            {
+                "timestamp": now_str,
+                "actor": "manager",
+                "action": "manager_override_applied",
+                "details": "Manager explicitly overrode a policy block to allow this request.",
+            }
+        )
 
     db.collection("tickets").document(ticket_id).set(new_ticket)
 
-    return json.dumps({
-        "ticket_id": ticket_id,
-        "status": status,
-        "message": "Ticket created successfully."
-    })
+    return json.dumps(
+        {
+            "ticket_id": ticket_id,
+            "status": status,
+            "message": "Ticket created successfully.",
+        }
+    )
+
 
 def approve_request(ticket_id: str, approved: bool, reason: str) -> str:
     """Approves or rejects a pending ticket."""
     doc_ref = db.collection("tickets").document(ticket_id)
     doc = doc_ref.get()
-    
+
     if not doc.exists:
         return json.dumps({"error": f"Ticket {ticket_id} not found."})
-        
+
     ticket = doc.to_dict()
     now_str = datetime.now().isoformat()
 
     if approved:
-        ticket["status"] = "approved"  # Laptop is being dispatched; awaiting mark_received
+        ticket["status"] = (
+            "approved"  # Laptop is being dispatched; awaiting mark_received
+        )
         action = "manager_approved"
         details = f"Request approved. Reason: {reason}"
     else:
@@ -269,15 +462,19 @@ def approve_request(ticket_id: str, approved: bool, reason: str) -> str:
         details = f"Request rejected. Reason: {reason}"
 
     ticket["approved_by"] = "manager"
-    ticket["audit_trail"].append({
-        "timestamp": now_str,
-        "actor": "manager",
-        "action": action,
-        "details": details
-    })
+    ticket["audit_trail"].append(
+        {"timestamp": now_str, "actor": "manager", "action": action, "details": details}
+    )
 
     doc_ref.set(ticket)
-    return json.dumps({"ticket_id": ticket_id, "status": ticket["status"], "message": "Ticket updated."})
+    return json.dumps(
+        {
+            "ticket_id": ticket_id,
+            "status": ticket["status"],
+            "message": "Ticket updated.",
+        }
+    )
+
 
 def mark_received(ticket_id: str) -> str:
     """Marks a laptop as physically received by the employee, starting the 1-year cooldown period.
@@ -299,39 +496,50 @@ def mark_received(ticket_id: str) -> str:
 
     ticket = doc.to_dict()
     if ticket["status"] != "approved":
-        return json.dumps({"error": f"Ticket {ticket_id} is not in 'approved' state. Current status: {ticket['status']}."})
+        return json.dumps(
+            {
+                "error": f"Ticket {ticket_id} is not in 'approved' state. Current status: {ticket['status']}."
+            }
+        )
 
     now_str = datetime.now().isoformat()
     ticket["status"] = "fulfilled"
     ticket["received_at"] = now_str  # 1-year cooldown starts from here
-    ticket["audit_trail"].append({
-        "timestamp": now_str,
-        "actor": "employee",
-        "action": "laptop_received",
-        "details": "Employee confirmed receipt of the laptop. 1-year cooldown period begins now."
-    })
+    ticket["audit_trail"].append(
+        {
+            "timestamp": now_str,
+            "actor": "employee",
+            "action": "laptop_received",
+            "details": "Employee confirmed receipt of the laptop. 1-year cooldown period begins now.",
+        }
+    )
 
     doc_ref.set(ticket)
-    return json.dumps({
-        "ticket_id": ticket_id,
-        "status": "fulfilled",
-        "received_at": now_str,
-        "message": "Laptop marked as received. Your 1-year cooldown period has started."
-    })
+    return json.dumps(
+        {
+            "ticket_id": ticket_id,
+            "status": "fulfilled",
+            "received_at": now_str,
+            "message": "Laptop marked as received. Your 1-year cooldown period has started.",
+        }
+    )
+
 
 def get_status(ticket_id: str) -> str:
     """Retrieves the current status and last 3 audit entries of a ticket."""
     doc = db.collection("tickets").document(ticket_id).get()
-    
+
     if not doc.exists:
         return json.dumps({"error": f"Ticket {ticket_id} not found."})
-        
+
     ticket = doc.to_dict()
     audit = ticket.get("audit_trail", [])
     last_3 = audit[-3:] if len(audit) >= 3 else audit
-    
-    return json.dumps({
-        "ticket_id": ticket_id,
-        "status": ticket["status"],
-        "recent_audit_trail": last_3
-    })
+
+    return json.dumps(
+        {
+            "ticket_id": ticket_id,
+            "status": ticket["status"],
+            "recent_audit_trail": last_3,
+        }
+    )
