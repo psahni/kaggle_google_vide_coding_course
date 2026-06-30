@@ -124,8 +124,19 @@ def lookup_employee(employee_id: str) -> str:
         return json.dumps(doc.to_dict())
     return f"Employee with ID {employee_id} not found."
 
-def check_policy(designation: str, experience: int, request_type: str, device: str) -> str:
-    """Checks the laptop request policy to determine entitlements and approval path."""
+def check_policy(employee_id: str, designation: str, experience: int, request_type: str, device: str) -> str:
+    """Checks the laptop request policy to determine entitlements and approval path.
+
+    Args:
+        employee_id: The ID of the employee making the request.
+        designation: Employee's job title/designation.
+        experience: Employee's years of experience.
+        request_type: The type of request (e.g., New, Upgrade, Replacement, New Hire).
+        device: The device category requested (e.g., standard, premium).
+
+    Returns:
+        A JSON string containing the entitled_device, tier, and required approval_path.
+    """
     policies_doc = db.collection("policies").document("config").get()
     if not policies_doc.exists:
         return json.dumps({"error": "Policy configuration not found in database."})
@@ -175,6 +186,33 @@ def check_policy(designation: str, experience: int, request_type: str, device: s
     if experience >= 10:
         approval_path = "Auto-approve"
 
+    # Check if employee has a completed/fulfilled ticket within the last 365 days
+    has_recent_laptop = False
+    tickets_ref = db.collection("tickets")
+    query = tickets_ref.where(filter=firestore.FieldFilter("requester.employee_id", "==", employee_id))
+    docs = query.stream()
+    now = datetime.now(timezone.utc)
+    for doc in docs:
+        t = doc.to_dict()
+        if t.get("status") == "fulfilled":
+            received_at_str = t.get("received_at")
+            if received_at_str:
+                try:
+                    received_at = datetime.fromisoformat(received_at_str)
+                    if received_at.tzinfo is None:
+                        received_at = received_at.replace(tzinfo=timezone.utc)
+                    time_since_received = now - received_at
+                    if time_since_received < timedelta(days=365):
+                        has_recent_laptop = True
+                        break
+                except (ValueError, TypeError):
+                    pass
+
+    # Cooldown enforcement: if they received a laptop within 1 year, any auto-approval is revoked
+    # and replaced with "Manager required". Other stricter paths (like Manager + Finance) remain active.
+    if has_recent_laptop and approval_path.lower() == "auto-approve":
+        approval_path = "Manager required"
+
     return json.dumps({
         "entitled_device": entitled_device,
         "tier": tier,
@@ -195,8 +233,30 @@ def create_ticket(requester: dict, request: dict, approval_path: str, manager_ov
     """
     ticket_id = _generate_ticket_id()
     
+    # Check if employee has a completed/fulfilled ticket within the last 365 days for double-safety
+    has_recent_laptop = False
+    tickets_ref = db.collection("tickets")
+    query = tickets_ref.where(filter=firestore.FieldFilter("requester.employee_id", "==", requester.get("employee_id")))
+    docs = query.stream()
+    now = datetime.now(timezone.utc)
+    for doc in docs:
+        t = doc.to_dict()
+        if t.get("status") == "fulfilled":
+            received_at_str = t.get("received_at")
+            if received_at_str:
+                try:
+                    received_at = datetime.fromisoformat(received_at_str)
+                    if received_at.tzinfo is None:
+                        received_at = received_at.replace(tzinfo=timezone.utc)
+                    time_since_received = now - received_at
+                    if time_since_received < timedelta(days=365):
+                        has_recent_laptop = True
+                        break
+                except (ValueError, TypeError):
+                    pass
+
     status = "pending_manager_approval"
-    if approval_path.lower() == "auto-approve":
+    if approval_path.lower() == "auto-approve" and not has_recent_laptop:
         # Auto-approved: laptop is being arranged. Cooldown starts only when mark_received is called.
         status = "approved"
     elif "finance" in approval_path.lower():

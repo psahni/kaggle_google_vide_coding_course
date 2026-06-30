@@ -43,7 +43,7 @@ Follow this strict protocol:
    - Accessories needed (if any)
    - If the request is a Replacement, ask whether the reason is Damaged, Aging, Lost, Stolen, or Defective (not working).
    - If the request is for a New Hire, also ask for their details and start date.
-6. POLICY CHECK: Use `check_policy` with the employee's designation, experience, the request_type, and the device preference to determine the entitled device and approval path.
+6. POLICY CHECK: Use `check_policy` with the employee_id, employee's designation, experience, the request_type, and the device preference to determine the entitled device and approval path.
 7. TICKET CREATION & APPROVAL ROUTING:
    - Create the ticket using `create_ticket` with all collected details, the determined approval path, and manager_override flag if applicable.
    - If the path is "Auto-approve", inform the user the ticket is created and approved. Ask them to confirm when they physically receive the laptop so you can call `mark_received`.
