@@ -54,17 +54,12 @@ gcloud projects add-iam-policy-binding [PROJECT_ID] \
 
 ---
 
-## 3. Database (Firestore) Initialization
+## 3. Database (Firestore) Configuration
 
-1. Open the [Google Cloud Console](https://console.cloud.google.com).
-2. Navigate to **Firestore** and select **Create Database**.
-3. Choose **Native Mode** (required for real-time listeners and offline SDK updates).
-4. Select your preferred region (e.g., `us-east1` or `asia-east1`).
-5. Populate the database by running the seed script locally (make sure your local credentials are authenticated via `gcloud auth application-default login`):
-   ```bash
-   uv run python app/scripts/migrate_to_firestore.py
-   uv run python app/scripts/seed_eval_fulfilled_ticket.py
-   ```
+1. **Database Instance**: This deployment continues to use the existing development Firestore database instance:
+   * **GCP Project ID**: `ambient-agent-500404`
+2. **Access Bindings**: Ensure the dedicated service account has standard user access to this project (`ambient-agent-500404`).
+3. **Data Verification**: Since the database is already fully initialized and seeded with employee schemas and current ticket logs, no new migration or seed scripts are required for deployment.
 
 ---
 
