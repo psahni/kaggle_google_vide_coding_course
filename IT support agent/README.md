@@ -59,6 +59,17 @@ For full command options and usage, refer to the [Makefile](Makefile).
 
 ---
 
+
+
+## Next.js Web Portal Connection
+The Next.js frontend application connects directly to the Firestore database to serve the ticket dashboard and process approvals.
+
+* **SDK/Driver**: Utilizes the `firebase-admin` Node.js library for secure, server-side database connectivity.
+* **Initialization**: Configured in [db.ts](frontend/lib/db.ts) using the target GCP Project ID.
+* **Environment Variables**: Reads `GOOGLE_CLOUD_PROJECT` to determine the target database. When deployed on Google Cloud Run, it automatically inherits permissions from the runtime's service account to query Firestore without local credential JSON files.
+
+
+
 ## Development
 
 Edit your agent logic in `app/agent.py` and test with `make playground` - it auto-reloads on save.
@@ -79,3 +90,24 @@ See the [deployment guide](https://googlecloudplatform.github.io/agent-starter-p
 
 Built-in telemetry exports to Cloud Trace, BigQuery, and Cloud Logging.
 See the [observability guide](https://googlecloudplatform.github.io/agent-starter-pack/guide/observability) for queries and dashboards.
+
+
+## System Architecture & Documentation
+
+For details on the overall system design and database implementation, refer to:
+* **[System Design Specification](docs/system_design.md)**: Visual diagrams of backend agent flows, approval states, and Firestore JSON schemas.
+* **[Database README](app/db/README.md)**: Guide on the local JSON file database and live Google Cloud Firestore configuration.
+* **[Frontend Web Portal README](frontend/README.md)**: Details on installing and running the Next.js frontend web app locally.
+
+---
+
+## Agent Tools Integration
+
+The Next.js web application interfaces with the custom backend tools configured on the Vertex AI Reasoning Engine agent. The database status changes triggered in the UI align with these tools:
+
+* **Employee Verification**: Binds to `lookup_employee` to pull profile details, cost centers, and department information.
+* **Request Validation**: Calls `check_existing_requests` to determine cooldown blocks and detect policy bypasses (e.g., defective or damaged laptops).
+* **Entitlement Resolution**: Syncs with `check_policy` evaluations which decide standard vs. premium tiers and approval paths (Auto-approve vs. Manager).
+* **Ticket Management**: Invokes `create_ticket`, `approve_request`, and `mark_received` state updates, building a persistent audit trail.
+
+
