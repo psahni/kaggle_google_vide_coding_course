@@ -107,33 +107,23 @@ gcloud run deploy it-support-frontend \
 
 ## 5. Backend (Python Agent) Deployment
 
-### Step A: Add `Dockerfile` in `/app`
-Create a `Dockerfile` in the root (pointing to the Python app module):
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
-EXPOSE 8080
-CMD ["uvicorn", "app.agent_engine_app:app", "--host", "0.0.0.0", "--port", "8080"]
-```
+The backend Conversational Agent is packaged and registered directly to the **Vertex AI Agent Engine** (Reasoning Engine) platform using the ADK deployment configuration.
 
-### Step B: Build and Deploy to Cloud Run
-Build the container image and deploy:
+### Step A: Deploy to Vertex AI
+Ensure you are logged into gcloud, have set the correct project context, and run the deployment target:
 ```bash
-# Build the backend image
-gcloud builds submit --tag gcr.io/[PROJECT_ID]/it-support-backend .
+# Windows PowerShell (UTF-8 encoding required for output symbols)
+$env:PYTHONIOENCODING="utf-8"
+make deploy
 
-# Deploy to Cloud Run
-gcloud run deploy it-support-backend \
-    --image gcr.io/[PROJECT_ID]/it-support-backend \
-    --platform managed \
-    --region us-east1 \
-    --service-account it-support-agent-sa@[PROJECT_ID].iam.gserviceaccount.com \
-    --allow-unauthenticated \
-    --set-env-vars=GOOGLE_CLOUD_PROJECT=[PROJECT_ID],GOOGLE_CLOUD_LOCATION=us-east1
+# Linux/macOS
+make deploy
 ```
+This script exports the agent's dependencies into `app/app_utils/.requirements.txt`, packages the code, and calls the Vertex AI preview libraries to register the Reasoning Engine in the `us-east1` region.
+
+### Step B: Verify Deployed Metadata
+Upon successful deployment, the unique Reasoning Engine resource ID is written to `deployment_metadata.json` in the root of the project.
+
 
 ---
 
