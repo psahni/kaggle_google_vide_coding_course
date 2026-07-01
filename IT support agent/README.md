@@ -98,6 +98,8 @@ For details on the overall system design and database implementation, refer to:
 * **[System Design Specification](docs/system_design.md)**: Visual diagrams of backend agent flows, approval states, and Firestore JSON schemas.
 * **[Database README](app/db/README.md)**: Guide on the local JSON file database and live Google Cloud Firestore configuration.
 * **[Frontend Web Portal README](frontend/README.md)**: Details on installing and running the Next.js frontend web app locally.
+* **[Agent Evaluation Guide](tests/eval/evalsets/README.md)**: Details the ADK simulation test harness structure, test cases format, and evaluation run parameters.
+
 
 ---
 
