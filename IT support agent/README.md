@@ -1,9 +1,9 @@
-# it-support-agent
+# 💻 IT Support Laptop Lifecycle Agent
 
 Simple ReAct agent
 Agent generated with [`googleCloudPlatform/agent-starter-pack`](https://github.com/GoogleCloudPlatform/agent-starter-pack) version `0.41.3`
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 it-support-agent/
@@ -19,7 +19,7 @@ it-support-agent/
 
 > 💡 **Tip:** Use [Gemini CLI](https://github.com/google-gemini/gemini-cli) for AI-assisted development - project context is pre-configured in `GEMINI.md`.
 
-## Requirements
+## 📋 Requirements
 
 Before you begin, ensure you have:
 - **uv**: Python package manager (used for all dependency management in this project) - [Install](https://docs.astral.sh/uv/getting-started/installation/) ([add packages](https://docs.astral.sh/uv/concepts/dependencies/) with `uv add <package>`)
@@ -27,7 +27,7 @@ Before you begin, ensure you have:
 - **make**: Build automation tool - [Install](https://www.gnu.org/software/make/) (pre-installed on most Unix-based systems)
 
 
-## Quick Start
+## ⚡ Quick Start
 
 Install required packages and launch the local development environment:
 
@@ -35,7 +35,7 @@ Install required packages and launch the local development environment:
 make install && make playground
 ```
 
-## Commands
+## ⚙️ Commands
 
 | Command              | Description                                                                                 |
 | -------------------- | ------------------------------------------------------------------------------------------- |
@@ -61,7 +61,7 @@ For full command options and usage, refer to the [Makefile](Makefile).
 
 
 
-## Next.js Web Portal Connection
+## 🌐 Next.js Web Portal Connection
 The Next.js frontend application connects directly to the Firestore database to serve the ticket dashboard and process approvals.
 
 * **SDK/Driver**: Utilizes the `firebase-admin` Node.js library for secure, server-side database connectivity.
@@ -70,12 +70,12 @@ The Next.js frontend application connects directly to the Firestore database to 
 
 
 
-## Development
+## 🛠️ Development
 
 Edit your agent logic in `app/agent.py` and test with `make playground` - it auto-reloads on save.
 See the [development guide](https://googlecloudplatform.github.io/agent-starter-pack/guide/development-guide) for the full workflow.
 
-## Deployment
+## 🚀 Deployment
 
 ```bash
 gcloud config set project <your-project-id>
@@ -86,13 +86,13 @@ To add CI/CD and Terraform, run `uvx agent-starter-pack enhance`.
 To set up your production infrastructure, run `uvx agent-starter-pack setup-cicd`.
 See the [deployment guide](https://googlecloudplatform.github.io/agent-starter-pack/guide/deployment) for details.
 
-## Observability
+## 📊 Observability
 
 Built-in telemetry exports to Cloud Trace, BigQuery, and Cloud Logging.
 See the [observability guide](https://googlecloudplatform.github.io/agent-starter-pack/guide/observability) for queries and dashboards.
 
 
-## System Architecture & Documentation
+## 📖 System Architecture & Documentation
 
 For details on the overall system design and database implementation, refer to:
 * **[System Design Specification](docs/system_design.md)**: Visual diagrams of backend agent flows, approval states, and Firestore JSON schemas.
@@ -103,7 +103,7 @@ For details on the overall system design and database implementation, refer to:
 
 ---
 
-## Agent Tools Integration
+## 🔗 Agent Tools Integration
 
 The Next.js web application interfaces with the custom backend tools configured on the Vertex AI Reasoning Engine agent. The database status changes triggered in the UI align with these tools:
 
