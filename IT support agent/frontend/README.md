@@ -34,3 +34,23 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+---
+
+## System Architecture & Documentation
+
+For details on the overall system design and database implementation, refer to:
+* **[System Design Specification](../docs/system_design.md)**: Visual diagrams of backend agent flows, approval states, and Firestore JSON schemas.
+* **[Database README](../app/db/README.md)**: Guide on the local JSON file database and live Google Cloud Firestore configuration.
+
+---
+
+## Agent Tools Integration
+
+The Next.js web application interfaces with the custom backend tools configured on the Vertex AI Reasoning Engine agent. The database status changes triggered in the UI align with these tools:
+
+* **Employee Verification**: Binds to `lookup_employee` to pull profile details, cost centers, and department information.
+* **Request Validation**: Calls `check_existing_requests` to determine cooldown blocks and detect policy bypasses (e.g., defective or damaged laptops).
+* **Entitlement Resolution**: Syncs with `check_policy` evaluations which decide standard vs. premium tiers and approval paths (Auto-approve vs. Manager).
+* **Ticket Management**: Invokes `create_ticket`, `approve_request`, and `mark_received` state updates, building a persistent audit trail.
+
