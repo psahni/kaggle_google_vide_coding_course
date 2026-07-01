@@ -7,9 +7,9 @@ This directory contains the database structure, local schemas, and setup utiliti
 ## 1. Local File Database (JSON)
 For local development, testing, and ADK evaluations, the database is stored as simple JSON files in this directory. 
 
-* **[employees.json](file:///e:/Prashant/development/2026/ag2-projects/IT%20support%20agent/app/db/employees.json)**: Contains employee records including names, designations, experience, department, and manager information.
-* **[policies.json](file:///e:/Prashant/development/2026/ag2-projects/IT%20support%20agent/app/db/policies.json)**: Stores policy parameters such as device model configurations, tier rules, experience upgrade thresholds, and cooldown durations.
-* **[tickets.json](file:///e:/Prashant/development/2026/ag2-projects/IT%20support%20agent/app/db/tickets.json)**: Stores ticket data, approvals, comments, and audit trails.
+* **[employees.json](app/db/employees.json)**: Contains employee records including names, designations, experience, department, and manager information.
+* **[policies.json](app/db/policies.json)**: Stores policy parameters such as device model configurations, tier rules, experience upgrade thresholds, and cooldown durations.
+* **[tickets.json](app/db/tickets.json)**: Stores ticket data, approvals, comments, and audit trails.
 
 ---
 
@@ -49,3 +49,13 @@ To populate initial sample tickets (supporting 1-year cooldown validation scenar
 ```bash
 uv run python app/scripts/seed_eval_fulfilled_ticket.py
 ```
+
+---
+
+## 4. Next.js Web Portal Connection
+The Next.js frontend application connects directly to the Firestore database to serve the ticket dashboard and process approvals.
+
+* **SDK/Driver**: Utilizes the `firebase-admin` Node.js library for secure, server-side database connectivity.
+* **Initialization**: Configured in [db.ts](../../frontend/lib/db.ts) using the target GCP Project ID.
+* **Environment Variables**: Reads `GOOGLE_CLOUD_PROJECT` to determine the target database. When deployed on Google Cloud Run, it automatically inherits permissions from the runtime's service account to query Firestore without local credential JSON files.
+
