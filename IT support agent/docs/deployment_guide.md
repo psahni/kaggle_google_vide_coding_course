@@ -121,7 +121,7 @@ make deploy
 ```
 This script exports the agent's dependencies into `app/app_utils/.requirements.txt`, packages the code, and calls the Vertex AI preview libraries to register the Reasoning Engine in the `us-east1` region.
 
-Under the hood, `make deploy` executes the [deploy.py](file:///e:/Prashant/development/2026/ag2-projects/IT%20support%20agent/app/app_utils/deploy.py) script. This helper script is provided by the Google Cloud Platform Agent Starter Pack template to handle parameter wrapping, env secret injections, and Reasoning Engine client requests.
+Under the hood, `make deploy` executes the [deploy.py](app/app_utils/deploy.py) script. This helper script is provided by the Google Cloud Platform Agent Starter Pack template to handle parameter wrapping, env secret injections, and Reasoning Engine client requests.
 
 ### Step B: Verify Deployed Metadata
 Upon successful deployment, the unique Reasoning Engine resource ID is written to `deployment_metadata.json` in the root of the project.
