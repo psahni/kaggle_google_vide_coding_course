@@ -44,6 +44,14 @@ deploy:
 # Alias for 'make deploy' for backward compatibility
 backend: deploy
 
+# Undeploy/shutdown all deployed cloud services (Cloud Run and Vertex AI Agent Engine)
+undeploy:
+	@echo "🚨 Shutting down Next.js web portal on Cloud Run..."
+	-gcloud run services delete it-support-frontend --region=us-east1 --quiet
+	@echo "🚨 Deleting all Vertex AI Reasoning Engines..."
+	-uv run python -c "import vertexai, google.auth; from vertexai.preview import reasoning_engines; _, project = google.auth.default(); vertexai.init(project=project, location='us-east1'); engines = reasoning_engines.ReasoningEngine.list(); [print('Deleting:', eng.resource_name) or eng.api_client.delete_reasoning_engine(request={'name': eng.resource_name, 'force': True}) for eng in engines]"
+	@echo "✅ All services successfully undeployed!"
+
 # ==============================================================================
 # Testing & Code Quality
 # ==============================================================================
