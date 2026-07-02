@@ -1,3 +1,5 @@
+PROJECT_ID ?= $(shell gcloud config get-value project 2>/dev/null)
+
 
 # ==============================================================================
 # Installation & Setup
@@ -43,6 +45,22 @@ deploy:
 
 # Alias for 'make deploy' for backward compatibility
 backend: deploy
+
+# Deploy the Next.js frontend app to Cloud Run
+deploy-frontend:
+	@echo "🚀 Building Next.js frontend container for project $(PROJECT_ID) using Cloud Build..."
+	gcloud builds submit --tag us-east1-docker.pkg.dev/$(PROJECT_ID)/it-support/frontend ./frontend
+	@echo "🚀 Deploying frontend to Cloud Run..."
+	gcloud run deploy it-support-frontend \
+		--image us-east1-docker.pkg.dev/$(PROJECT_ID)/it-support/frontend \
+		--platform managed \
+		--region us-east1 \
+		--port=3000 \
+		--allow-unauthenticated \
+		--set-env-vars=NEXT_PUBLIC_FIRESTORE_PROJECT_ID=$(PROJECT_ID)
+
+# Deploy both backend Reasoning Engine and frontend Next.js app
+deploy-all: deploy deploy-frontend
 
 # Undeploy/shutdown all deployed cloud services (Cloud Run and Vertex AI Agent Engine)
 undeploy:
